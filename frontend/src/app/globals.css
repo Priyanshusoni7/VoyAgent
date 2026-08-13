@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+/* Custom design tokens for VoyAgent */
+@theme inline {
+  --font-sans: var(--font-jakarta);
+
+  /* Primary coral/terracotta — warm, travel-y, not generic */
+  --color-primary: #d4603a;
+  --color-primary-hover: #bf5432;
+  --color-primary-light: #fdf1ec;
+
+  /* Page & surface backgrounds */
+  --color-bg: #f8f6f2;
+  --color-surface: #ffffff;
+
+  /* Borders & strokes */
+  --color-border: #e8e2d8;
+
+  /* Text */
+  --color-ink: #1a1714;
+  --color-muted: #7a6f65;
+
+  /* Status colors */
+  --color-success: #16a34a;
+  --color-success-light: #f0fdf4;
+  --color-warning: #d97706;
+  --color-warning-light: #fffbeb;
+}
+
+:root {
+  --background: #f8f6f2;
+  --foreground: #1a1714;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Thin scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #d6cfc6; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #bdb4a8; }
