@@ -3,11 +3,13 @@ package com.voyagent.backend.config;
 import com.voyagent.backend.security.AuthInterceptor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.time.Duration;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -17,6 +19,9 @@ public class WebConfig implements WebMvcConfigurer {
 
     private static final List<String> DEFAULT_ORIGINS =
             List.of("http://localhost:3000", "http://127.0.0.1:3000");
+
+    private static final Duration AI_CONNECT_TIMEOUT = Duration.ofSeconds(15);
+    private static final Duration AI_READ_TIMEOUT = Duration.ofSeconds(120);
 
     private final AppProperties properties;
     private final AuthInterceptor authInterceptor;
@@ -50,8 +55,21 @@ public class WebConfig implements WebMvcConfigurer {
                 .addPathPatterns("/api/auth/me", "/api/trips/**", "/api/trips");
     }
 
+    /**
+     * Generous read timeout: a real trip plan runs several LLM calls plus two
+     * live searches, and on a free hosting tier the AI service may also be
+     * waking from sleep. Without an explicit timeout the JDK would wait
+     * forever, so a stalled AI service would hang the request thread.
+     */
     @Bean
     public RestClient aiServiceClient(RestClient.Builder builder) {
-        return builder.baseUrl(properties.aiServiceUrl()).build();
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(AI_CONNECT_TIMEOUT);
+        requestFactory.setReadTimeout(AI_READ_TIMEOUT);
+
+        return builder
+                .baseUrl(properties.aiServiceUrl())
+                .requestFactory(requestFactory)
+                .build();
     }
 }
