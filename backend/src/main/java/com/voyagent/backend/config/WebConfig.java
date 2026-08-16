@@ -21,7 +21,7 @@ public class WebConfig implements WebMvcConfigurer {
             List.of("http://localhost:3000", "http://127.0.0.1:3000");
 
     private static final Duration AI_CONNECT_TIMEOUT = Duration.ofSeconds(15);
-    private static final Duration AI_READ_TIMEOUT = Duration.ofSeconds(120);
+    private static final Duration AI_READ_TIMEOUT = Duration.ofSeconds(300);
 
     private final AppProperties properties;
     private final AuthInterceptor authInterceptor;
@@ -60,6 +60,14 @@ public class WebConfig implements WebMvcConfigurer {
      * live searches, and on a free hosting tier the AI service may also be
      * waking from sleep. Without an explicit timeout the JDK would wait
      * forever, so a stalled AI service would hang the request thread.
+     *
+     * <p>300s is sized for the worst realistic case rather than the usual one:
+     * a free-tier cold start costs roughly a minute before the AI service reads
+     * the request at all, and the full pipeline itself takes ~30-90s. The
+     * earlier 120s sat right on that boundary, so a plan requested against a
+     * sleeping AI service failed even though the service went on to finish the
+     * work. The host allows far longer responses than this, so the ceiling here
+     * only needs to stop a genuinely hung request from holding a thread.
      */
     @Bean
     public RestClient aiServiceClient(RestClient.Builder builder) {
