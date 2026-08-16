@@ -32,7 +32,13 @@ app.include_router(
     tags=["Planner"],
 )
 
-@app.get("/health")
+# GET and HEAD, because uptime monitors commonly probe with HEAD and FastAPI
+# does not add it for you (a GET-only route answers HEAD with 405).
+#
+# Deliberately does no work: no LangGraph run, no Gemini call, no SerpAPI call.
+# It only reports that the process is serving, so it stays free to poll and
+# keeps the free-tier instance from spinning down between trips.
+@app.api_route("/health", methods=["GET", "HEAD"])
 def health():
     return {
         "status": "ok",
