@@ -1,0 +1,60 @@
+# Render Blueprint for VoyAgent.
+#
+# Values marked `sync: false` are NOT stored in this file - set them in the
+# Render dashboard under each service's Environment tab. That covers both
+# secrets and the two service URLs, which are only known after the first
+# deploy (see the deployment guide for the exact order).
+
+services:
+  # ----------------------------------------------------------------------
+  # AI service - FastAPI + LangGraph. Deploy this FIRST: it has no
+  # dependency on the other services.
+  # ----------------------------------------------------------------------
+  - type: web
+    name: voyagent-ai-service
+    runtime: python
+    rootDir: ai-service
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: SERPAPI_KEY
+        sync: false
+
+  # ----------------------------------------------------------------------
+  # Backend - Spring Boot. Docker is required because Render has no native
+  # Java runtime. Deploy SECOND, once the AI service URL is known.
+  # ----------------------------------------------------------------------
+  - type: web
+    name: voyagent-backend
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      # Enables Secure + SameSite=None auth cookies. Required for the
+      # browser to keep the session across different domains.
+      - key: NODE_ENV
+        value: production
+
+      # Caps the heap so the JVM fits comfortably in the 512MB free tier.
+      - key: JAVA_TOOL_OPTIONS
+        value: -Xmx350m
+
+      # Secrets - set in the dashboard.
+      - key: MONGO_DB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+
+      # URLs - set in the dashboard once each service exists.
+      # AI_SERVICE_URL  -> https://voyagent-ai-service.onrender.com
+      # FRONTEND_URL    -> https://<your-app>.vercel.app
+      - key: AI_SERVICE_URL
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
